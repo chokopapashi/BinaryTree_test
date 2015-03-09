@@ -127,9 +127,9 @@ class AddedCompleteBinaryTree[A](newData: A, srcTree : CompleteBinaryTree[A]) ex
         nodes match {
             case Nil      =>
             case nh :: nt => nh match {
-                case DummyLeaf => /* Nothing to do */
-                case Sentinel => Sentinel :: list
-                case Leaf(_)  => 
+                case DummyLeaf    => /* Nothing to do */
+                case Sentinel     => Sentinel :: list
+                case l @ Leaf(_)  => l :: list
             }
         }
     }
