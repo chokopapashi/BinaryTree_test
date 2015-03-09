@@ -5,6 +5,7 @@ abstract class Vertex[A] {
 
 case class Leaf[A](data: A) extends Vertex
 object Sentinel extends Vertex[Nothing]
+object DummyLeaf extends Vertex[Nothing]
 
 abstract class Node[A](
     data: A, leftChild: Vertex[A], rightChild: Vertex[A])
@@ -120,6 +121,23 @@ object CompleteBinaryTree {
  *  ((B,C),(D,E),(F,G),(H,S))
  */
 class AddedCompleteBinaryTree[A](newData: A, srcTree : CompleteBinaryTree[A]) extends CompleteBinaryTree {
+
+
+    def addTree {
+        nodes match {
+            case Nil      =>
+            case nh :: nt => nh match {
+                case DummyLeaf => /* Nothing to do */
+                case Sentinel => Sentinel :: list
+                case Leaf(_)  => 
+            }
+        }
+    }
+
+
+
+
+
 
 
     def addTree(vs: List[A], xs: List[A], level: Int) {
