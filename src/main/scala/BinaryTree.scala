@@ -123,13 +123,13 @@ object CompleteBinaryTree {
 class AddedCompleteBinaryTree[A](newData: A, srcTree : CompleteBinaryTree[A]) extends CompleteBinaryTree {
 
 
-    def addTree {
+    def addTree(list: List[A]): List[A] = {
         nodes match {
-            case Nil      =>
+            case Nil      => list
             case nh :: nt => nh match {
                 case DummyLeaf    => /* Nothing to do */
-                case Sentinel     => Sentinel :: list
-                case l @ Leaf(_)  => l :: list
+                case Sentinel     => Sentinel :: addTree(list)
+                case l @ Leaf(_)  => l :: addTree(list)
             }
         }
     }
