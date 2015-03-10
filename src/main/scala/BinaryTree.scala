@@ -123,9 +123,11 @@ object CompleteBinaryTree {
 class AddedCompleteBinaryTree[A](newData: A, srcTree : CompleteBinaryTree[A]) extends CompleteBinaryTree {
 
 
-    def addTree(list: List[A]): List[A] = {
-        nodes match {
-            case Nil      => list
+    def 
+
+    def addTree(ivs: List[Vretex[A]], ovs: List[Vertex[A]]): List[A] = {
+        val (): Tuple2[Vertex[A],List[Vertex[A]]] = ivs match {
+            case Nil      => Nil
             case nh :: nt => nh match {
                 case DummyLeaf    => /* Nothing to do */
                 case Sentinel     => Sentinel :: addTree(list)
