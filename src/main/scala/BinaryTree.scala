@@ -122,6 +122,21 @@ object CompleteBinaryTree {
  */
 class AddedCompleteBinaryTree[A](newData: A, srcTree : CompleteBinaryTree[A]) extends CompleteBinaryTree {
 
+    def f2(l: Leaf[A]) {
+        if(isInsertPoint)
+        else l
+    }
+
+
+    def f1(v: Vertex[A]) = v match {
+        case FullNode(d, l, r) => FullNode(d, f1(leftChild), f1(rightChild))
+        case l @ Leaf(_)       => l
+        case s @ Sentinel      => f2(l)
+    }
+
+    /* -------------------------------------------------------------------- */
+
+
     def f3(v, l, r) {
         FullNode
 
@@ -140,6 +155,8 @@ class AddedCompleteBinaryTree[A](newData: A, srcTree : CompleteBinaryTree[A]) ex
             case vh :: vt => fr(vh, vt)
         }
     }
+
+    /* -------------------------------------------------------------------- */
 
     def addTree(ivs: List[Vretex[A]], ovs: List[Vertex[A]]): List[A] = {
         val (): Tuple2[Vertex[A],List[Vertex[A]]] = ivs match {
