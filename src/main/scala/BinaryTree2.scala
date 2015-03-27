@@ -26,9 +26,9 @@ class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
         case Sentinel      => Nil
     }
 
-    def traversPreOrder()  = traverse(root)((d,lt,rt) => List(d) ::: lt ::: rt ::: Nil)
-    def traversInOrder()   = traverse(root)((d,lt,rt) => lt ::: List(d) ::: rt ::: Nil)
-    def traversPostOrder() = traverse(root)((d,lt,rt) => lt ::: rt ::: List(d) ::: Nil)
+    def traversePreOrder()  = traverse(root)((d,lt,rt) => List(d) ::: lt ::: rt ::: Nil)
+    def traverseInOrder()   = traverse(root)((d,lt,rt) => lt ::: List(d) ::: rt ::: Nil)
+    def traversePostOrder() = traverse(root)((d,lt,rt) => lt ::: rt ::: List(d) ::: Nil)
 }   // }}}
 
 class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
@@ -47,9 +47,9 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
 
     def opz(d: A, z: List[A]) = d :: z
 
-    def traversPreOrder()   = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => dv :: lv :: rv :: vs).reverse
-    def traversInOrder()    = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => lv :: dv :: rv :: vs).reverse
-    def traversPostOrder()  = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => lv :: rv :: dv :: vs).reverse
+    def traversePreOrder()   = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => dv :: lv :: rv :: vs).reverse
+    def traverseInOrder()    = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => lv :: dv :: rv :: vs).reverse
+    def traversePostOrder()  = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => lv :: rv :: dv :: vs).reverse
 
     /*
      * F :: Nil :: (B-(A,(D-(C,E)))) :: (G-(_,(I-(H,_)))) :: Nil
@@ -65,7 +65,7 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
      * _ :: Nil
      * Nil
      */
-    def traversLevelOrder() = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => (dv :: vs) ::: (lv :: rv :: Nil)).reverse
+    def traverseLevelOrder() = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => (dv :: vs) ::: (lv :: rv :: Nil)).reverse
 }
 
 /*
@@ -85,32 +85,53 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
  *
  */
 object BinaryTree2 extends App {
-   
-//    val root = Node("D", Node("B", Leaf("A"), Leaf("C")), Node("F", Leaf("E"), Leaf("G")))
-    val root = Node("F", Node("B", Leaf("A"), Node("D", Leaf("C"), Leaf("E"))), Node("G", Sentinel, Node("I", Leaf("H"), Sentinel)))
-    val btree = new CompleteBinaryTree(root)
-    println("[CompleteBinaryTree]")
-    println("PreOrder  : " + btree.traversPreOrder())
-    println("InOrder   : " + btree.traversInOrder())
-    println("PostOrder : " + btree.traversPostOrder())
+
+    def traverseBinaryTree[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
+        val btree = new CompleteBinaryTree(root)
+        println("-- CompleteBinaryTree --")
+        println("PreOrder  : " + btree.traversePreOrder())
+        println("InOrder   : " + btree.traverseInOrder())
+        println("PostOrder : " + btree.traversePostOrder())
+
+        println()
+
+        val btree2 = new CompleteBinaryTree2(root)
+        println("-- CompleteBinaryTree2 --")
+        println("PreOrder   : " + btree2.traversePreOrder())
+        println("InOrder    : " + btree2.traverseInOrder())
+        println("PostOrder  : " + btree2.traversePostOrder())
+        println("LevelOrder : " + btree2.traverseLevelOrder())
+    }
+
+    println("[root1]")
+    val root1 = Node("D", Node("B", Leaf("A"), Leaf("C")), Node("F", Leaf("E"), Leaf("G")))
+    traverseBinaryTree(root1)
 
     println()
 
-    val btree2 = new CompleteBinaryTree2(root)
-    println("[CompleteBinaryTree2]")
-    println("PreOrder   : " + btree2.traversPreOrder())
-    println("InOrder    : " + btree2.traversInOrder())
-    println("PostOrder  : " + btree2.traversPostOrder())
-    println("LevelOrder : " + btree2.traversLevelOrder())
+    println("[root2]")
+    val root2 = Node("F", Node("B", Leaf("A"), Node("D", Leaf("C"), Leaf("E"))), Node("G", Sentinel, Node("I", Leaf("H"), Sentinel)))
+    traverseBinaryTree(root2)
 
     /*
-     * [info] Running BinaryTree2
-     * [CompleteBinaryTree]
+     * [root1]
+     * -- CompleteBinaryTree --
+     * PreOrder  : List(D, B, A, C, F, E, G)
+     * InOrder   : List(A, B, C, D, E, F, G)
+     * PostOrder : List(A, C, B, E, G, F, D)
+     * 
+     * -- CompleteBinaryTree2 --
+     * PreOrder   : List(D, B, A, C, F, E, G)
+     * InOrder    : List(A, B, C, D, E, F, G)
+     * PostOrder  : List(A, C, B, E, G, F, D)
+     * LevelOrder : List(D, B, F, A, C, E, G)
+     * [root2]
+     * -- CompleteBinaryTree --
      * PreOrder  : List(F, B, A, D, C, E, G, I, H)
      * InOrder   : List(A, B, C, D, E, F, G, H, I)
      * PostOrder : List(A, C, E, D, B, H, I, G, F)
-     *
-     * [CompleteBinaryTree2]
+     * 
+     * -- CompleteBinaryTree2 --
      * PreOrder   : List(F, B, A, D, C, E, G, I, H)
      * InOrder    : List(A, B, C, D, E, F, G, H, I)
      * PostOrder  : List(A, C, E, D, B, H, I, G, F)
