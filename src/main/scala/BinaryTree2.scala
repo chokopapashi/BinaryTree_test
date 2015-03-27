@@ -102,6 +102,20 @@ object BinaryTree2 extends App {
     println("InOrder    : " + btree2.traversInOrder())
     println("PostOrder  : " + btree2.traversPostOrder())
     println("LevelOrder : " + btree2.traversLevelOrder())
+
+    /*
+     * [info] Running BinaryTree2
+     * [CompleteBinaryTree]
+     * PreOrder  : List(F, B, A, D, C, E, G, I, H)
+     * InOrder   : List(A, B, C, D, E, F, G, H, I)
+     * PostOrder : List(A, C, E, D, B, H, I, G, F)
+     *
+     * [CompleteBinaryTree2]
+     * PreOrder   : List(F, B, A, D, C, E, G, I, H)
+     * InOrder    : List(A, B, C, D, E, F, G, H, I)
+     * PostOrder  : List(A, C, E, D, B, H, I, G, F)
+     * LevelOrder : List(F, B, G, A, D, I, C, E, H)
+     */
 }
 
 /* vim: set foldmethod=marker: */
