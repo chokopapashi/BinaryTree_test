@@ -12,8 +12,8 @@ object Sentinel extends Vertex[Nothing] {
     lazy val data = throw new IllegalStateException()
     override def toString = s"Sentinel[Nothing]"
 }
-case class DataVertex[A](data: A)(implicit tA: ru.TypeTag[A]) extends Vertex[A]
-
+case class VertexData[A](data: A)(implicit tA: ru.TypeTag[A]) extends Vertex[A]
+case class VertexWrap[A](data: A, vertex: Vertex[A])(implicit tA: ru.TypeTag[A]) extends Vertex[A]
 
 class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
 
@@ -30,26 +30,51 @@ class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
     def traverseInOrder   = traverse(root)((d,lt,rt) => lt ::: List(d) ::: rt ::: Nil)
     def traversePostOrder = traverse(root)((d,lt,rt) => lt ::: rt ::: List(d) ::: Nil)
     def size = traverseInOrder.size
-    def hight: Int = {
-        def traverseHight(v: VA): Int = v match {
-            case Node(_, l, r) => List(traverseHight(l), traverseHight(r)).max + 1
-            case Leaf(_)       => 1
-            case _ => 0
-        }
-        traverseHight(root)
+
+    def traverse2[B](v: VA)(d1: B)(d2: B)(op: (B,B) => B): B = v match {
+        case Node(_, l, r) => op(traverse2(l)(d1)(d2)(op), traverse2(r)(d1)(d2)(op))
+        case Leaf(_)       => d1
+        case _             => d2 
     }
+    def hight    : Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).max + 1)
+    def leafCount: Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).sum)
+
 }   // }}}
 
 class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
 
     type VA  = Vertex[A]
     type LVA = List[VA]
+    type LA  = List[A]
+
+    def traverseVertex[B](z: B)(opz:  (A,VA,B) => B)(vs: LVA)(ov: (VA,VA,VA,LVA) => LVA): B = vs match {
+        case (n @ Node(d, l, r)) :: vst => traverseVertex(z)(opz)(ov(VertexWrap(d,n), l, r, vst))(ov)
+        case (l @ Leaf(d))       :: vst => traverseVertex(z)(opz)(VertexWrap(d,l) :: vst)(ov)
+        case Sentinel            :: vst => traverseVertex(z)(opz)(vst)(ov)
+        case VertexWrap(d,v)     :: vst => traverseVertex(opz(d,v,z))(opz)(vst)(ov)
+        case v                   :: _   => throw new IllegalStateException(v.toString)
+        case Nil                        => z
+    }
+
+    def traverseVertexPreOrder  [B](z: B)(opz: (A,VA,B) => B): B = traverseVertex(z)(opz)(List(root))((dv,lv,rv,vs) => dv :: lv :: rv :: vs)
+    def traverseVertexInOrder   [B](z: B)(opz: (A,VA,B) => B): B = traverseVertex(z)(opz)(List(root))((dv,lv,rv,vs) => lv :: dv :: rv :: vs)
+    def traverseVertexPostOrder [B](z: B)(opz: (A,VA,B) => B): B = traverseVertex(z)(opz)(List(root))((dv,lv,rv,vs) => lv :: rv :: dv :: vs)
+    def traverseVertexLevelOrder[B](z: B)(opz: (A,VA,B) => B): B = traverseVertex(z)(opz)(List(root))((dv,lv,rv,vs) => (dv :: vs) ::: (lv :: rv :: Nil))
+
+    def leafCount: Int = traverseVertexInOrder(0) {
+        (d,v,z) => v match {
+            case Leaf(_) => z + 1
+            case _       => z
+        }
+    }
+
+    /* -------------------------------------------------------------------- */
 
     def traverseTree[B](z: B)(opz: (A,B) => B)(vs: LVA)(ov: (VA,VA,VA,LVA) => LVA): B = vs match {
-        case Node(d, l, r) :: vst => traverseTree(z)(opz)(ov(DataVertex(d), l, r, vst))(ov)
-        case Leaf(d)       :: vst => traverseTree(z)(opz)(DataVertex(d) :: vst)(ov)
+        case Node(d, l, r) :: vst => traverseTree(z)(opz)(ov(VertexData(d), l, r, vst))(ov)
+        case Leaf(d)       :: vst => traverseTree(z)(opz)(VertexData(d) :: vst)(ov)
         case Sentinel      :: vst => traverseTree(z)(opz)(vst)(ov)
-        case DataVertex(d) :: vst => traverseTree(opz(d,z))(opz)(vst)(ov)
+        case VertexData(d) :: vst => traverseTree(opz(d,z))(opz)(vst)(ov)
         case v             :: _   => throw new IllegalStateException(v.toString)
         case Nil                  => z
     }
@@ -74,7 +99,7 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
      }}} */
     def traverseLevelOrder[B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => (dv :: vs) ::: (lv :: rv :: Nil))
 
-    def collectVertexData(d: A, z: List[A]) = d :: z
+    def collectVertexData(d: A, z: LA) = d :: z
     def toListPreOrder   = traversePreOrder(List.empty[A])(collectVertexData).reverse
     def toListInOrder    = traverseInOrder(List.empty[A])(collectVertexData).reverse
     def toListPostOrder  = traversePostOrder(List.empty[A])(collectVertexData).reverse
@@ -118,6 +143,7 @@ object BinaryTree2 extends App {
         println("PostOrder : " + btree.traversePostOrder)
         println("size      : " + btree.size)
         println("hight     : " + btree.hight)
+        println("leafCount : " + btree.leafCount)
 
         println()
 
@@ -129,6 +155,7 @@ object BinaryTree2 extends App {
         println("LevelOrder : " + btree2.toListLevelOrder)
         println("size       : " + btree2.size)
         println("hight      : " + btree2.hight)
+        println("leafCount  : " + btree2.leafCount)
     }
 
     println("[root1]")
