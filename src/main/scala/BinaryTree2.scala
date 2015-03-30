@@ -26,9 +26,18 @@ class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
         case Sentinel      => Nil
     }
 
-    def traversePreOrder()  = traverse(root)((d,lt,rt) => List(d) ::: lt ::: rt ::: Nil)
-    def traverseInOrder()   = traverse(root)((d,lt,rt) => lt ::: List(d) ::: rt ::: Nil)
-    def traversePostOrder() = traverse(root)((d,lt,rt) => lt ::: rt ::: List(d) ::: Nil)
+    def traversePreOrder  = traverse(root)((d,lt,rt) => List(d) ::: lt ::: rt ::: Nil)
+    def traverseInOrder   = traverse(root)((d,lt,rt) => lt ::: List(d) ::: rt ::: Nil)
+    def traversePostOrder = traverse(root)((d,lt,rt) => lt ::: rt ::: List(d) ::: Nil)
+    def size = traverseInOrder.size
+    def hight: Int = {
+        def traverseHight(v: VA): Int = v match {
+            case Node(_, l, r) => List(traverseHight(l), traverseHight(r)).max + 1
+            case Leaf(_)       => 1
+            case _ => 0
+        }
+        traverseHight(root)
+    }
 }   // }}}
 
 class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
@@ -36,22 +45,20 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
     type VA  = Vertex[A]
     type LVA = List[VA]
 
-    def traverse[B](z: B)(opz: (A,B) => B)(vs: LVA)(ov: (VA,VA,VA,LVA) => LVA): B = vs match {
-        case Node(d, l, r) :: vst => traverse(z)(opz)(ov(DataVertex(d), l, r, vst))(ov)
-        case Leaf(d)       :: vst => traverse(z)(opz)(DataVertex(d) :: vst)(ov)
-        case Sentinel      :: vst => traverse(z)(opz)(vst)(ov)
-        case DataVertex(d) :: vst => traverse(opz(d,z))(opz)(vst)(ov)
+    def traverseTree[B](z: B)(opz: (A,B) => B)(vs: LVA)(ov: (VA,VA,VA,LVA) => LVA): B = vs match {
+        case Node(d, l, r) :: vst => traverseTree(z)(opz)(ov(DataVertex(d), l, r, vst))(ov)
+        case Leaf(d)       :: vst => traverseTree(z)(opz)(DataVertex(d) :: vst)(ov)
+        case Sentinel      :: vst => traverseTree(z)(opz)(vst)(ov)
+        case DataVertex(d) :: vst => traverseTree(opz(d,z))(opz)(vst)(ov)
         case v             :: _   => throw new IllegalStateException(v.toString)
         case Nil                  => z
     }
 
-    def opz(d: A, z: List[A]) = d :: z
+    def traversePreOrder [B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => dv :: lv :: rv :: vs)
+    def traverseInOrder  [B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => lv :: dv :: rv :: vs)
+    def traversePostOrder[B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => lv :: rv :: dv :: vs)
 
-    def traversePreOrder()   = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => dv :: lv :: rv :: vs).reverse
-    def traverseInOrder()    = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => lv :: dv :: rv :: vs).reverse
-    def traversePostOrder()  = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => lv :: rv :: dv :: vs).reverse
-
-    /*
+    /* {{{
      * F :: Nil :: (B-(A,(D-(C,E)))) :: (G-(_,(I-(H,_)))) :: Nil
      * B :: (G-(_,(I-(H,_)))) :: A :: (D,(C,E)) :: Nil
      * G :: A :: (D-(C,E) :: (_,(I-(H,_))) :: Nil
@@ -64,8 +71,25 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
      * H :: _ :: Nil
      * _ :: Nil
      * Nil
-     */
-    def traverseLevelOrder() = traverse(List.empty[A])(opz)(List(root))((dv,lv,rv,vs) => (dv :: vs) ::: (lv :: rv :: Nil)).reverse
+     }}} */
+    def traverseLevelOrder[B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => (dv :: vs) ::: (lv :: rv :: Nil))
+
+    def collectVertexData(d: A, z: List[A]) = d :: z
+    def toListPreOrder   = traversePreOrder(List.empty[A])(collectVertexData).reverse
+    def toListInOrder    = traverseInOrder(List.empty[A])(collectVertexData).reverse
+    def toListPostOrder  = traversePostOrder(List.empty[A])(collectVertexData).reverse
+    def toListLevelOrder = traverseLevelOrder(List.empty[A])(collectVertexData).reverse
+
+    def size: Int = traverseInOrder(0)((_,z) => z + 1)
+
+    def hight: Int = {
+        def traverseHight(v: VA): Int = v match {
+            case Node(_, l, r) => List(traverseHight(l), traverseHight(r)).max + 1
+            case Leaf(_)       => 1
+            case _             => 0
+        }
+        traverseHight(root)
+    }
 }
 
 /*
@@ -89,18 +113,22 @@ object BinaryTree2 extends App {
     def traverseBinaryTree[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
         val btree = new CompleteBinaryTree(root)
         println("-- CompleteBinaryTree --")
-        println("PreOrder  : " + btree.traversePreOrder())
-        println("InOrder   : " + btree.traverseInOrder())
-        println("PostOrder : " + btree.traversePostOrder())
+        println("PreOrder  : " + btree.traversePreOrder)
+        println("InOrder   : " + btree.traverseInOrder)
+        println("PostOrder : " + btree.traversePostOrder)
+        println("size      : " + btree.size)
+        println("hight     : " + btree.hight)
 
         println()
 
         val btree2 = new CompleteBinaryTree2(root)
         println("-- CompleteBinaryTree2 --")
-        println("PreOrder   : " + btree2.traversePreOrder())
-        println("InOrder    : " + btree2.traverseInOrder())
-        println("PostOrder  : " + btree2.traversePostOrder())
-        println("LevelOrder : " + btree2.traverseLevelOrder())
+        println("PreOrder   : " + btree2.toListPreOrder)
+        println("InOrder    : " + btree2.toListInOrder)
+        println("PostOrder  : " + btree2.toListPostOrder)
+        println("LevelOrder : " + btree2.toListLevelOrder)
+        println("size       : " + btree2.size)
+        println("hight      : " + btree2.hight)
     }
 
     println("[root1]")
@@ -113,7 +141,7 @@ object BinaryTree2 extends App {
     val root2 = Node("F", Node("B", Leaf("A"), Node("D", Leaf("C"), Leaf("E"))), Node("G", Sentinel, Node("I", Leaf("H"), Sentinel)))
     traverseBinaryTree(root2)
 
-    /*
+    /* {{{
      * [root1]
      * -- CompleteBinaryTree --
      * PreOrder  : List(D, B, A, C, F, E, G)
@@ -136,7 +164,7 @@ object BinaryTree2 extends App {
      * InOrder    : List(A, B, C, D, E, F, G, H, I)
      * PostOrder  : List(A, C, E, D, B, H, I, G, F)
      * LevelOrder : List(F, B, G, A, D, I, C, E, H)
-     */
+     }}} */
 }
 
 /* vim: set foldmethod=marker: */
