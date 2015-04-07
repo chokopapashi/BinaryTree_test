@@ -39,6 +39,8 @@ class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
     def hight    : Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).max + 1)
     def leafCount: Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).sum)
     def last     : A   = traversePreOrder.last
+    def maxRight : A   = last
+    def maxLeft  : A   = traversePostOrder.head
 
 }   // }}}
 
@@ -118,6 +120,20 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
     }
 
     def last: A = toListPreOrder.last
+    def maxRight: A = last
+    def maxLeft : A = toListPostOrder.head
+
+/*
+    def add(d: A): CompleteBinaryTree2[A] = {
+         def traverseAdd(v: VA): Int = v match {
+            case Node(_, l, r) => List(traverseHight(l), traverseHight(r)).max + 1
+            case Leaf(_)       => new CompleteBinaryTree(Leaf(d))
+            case Sentinel      => new CompleteBinaryTree(Leaf(d))
+            case _             => 0
+        }
+        traverseAdd(root)
+    }
+*/
 }
 
 /*
@@ -148,6 +164,8 @@ object BinaryTree2 extends App {
         println("hight     : " + btree.hight)
         println("leafCount : " + btree.leafCount)
         println("last      : " + btree.last)
+        println("maxRight  : " + btree.maxRight)
+        println("maxLeft   : " + btree.maxLeft)
 
         println()
 
@@ -161,6 +179,8 @@ object BinaryTree2 extends App {
         println("hight      : " + btree2.hight)
         println("leafCount  : " + btree2.leafCount)
         println("last       : " + btree2.last)
+        println("maxRight   : " + btree2.maxRight)
+        println("maxLeft    : " + btree2.maxLeft)
     }
 
     println("[root1]")
@@ -174,28 +194,55 @@ object BinaryTree2 extends App {
     traverseBinaryTree(root2)
 
     /* {{{
+     * [info] Running BinaryTree2
      * [root1]
      * -- CompleteBinaryTree --
      * PreOrder  : List(D, B, A, C, F, E, G)
      * InOrder   : List(A, B, C, D, E, F, G)
      * PostOrder : List(A, C, B, E, G, F, D)
+     * size      : 7
+     * hight     : 3
+     * leafCount : 4
+     * last      : G
+     * maxRight  : G
+     * maxLeft   : A
      * 
      * -- CompleteBinaryTree2 --
      * PreOrder   : List(D, B, A, C, F, E, G)
      * InOrder    : List(A, B, C, D, E, F, G)
      * PostOrder  : List(A, C, B, E, G, F, D)
      * LevelOrder : List(D, B, F, A, C, E, G)
+     * size       : 7
+     * hight      : 3
+     * leafCount  : 4
+     * last       : G
+     * maxRight   : G
+     * maxLeft    : A
+     * 
      * [root2]
      * -- CompleteBinaryTree --
      * PreOrder  : List(F, B, A, D, C, E, G, I, H)
      * InOrder   : List(A, B, C, D, E, F, G, H, I)
      * PostOrder : List(A, C, E, D, B, H, I, G, F)
+     * size      : 9
+     * hight     : 4
+     * leafCount : 4
+     * last      : H
+     * maxRight  : H
+     * maxLeft   : A
      * 
      * -- CompleteBinaryTree2 --
      * PreOrder   : List(F, B, A, D, C, E, G, I, H)
      * InOrder    : List(A, B, C, D, E, F, G, H, I)
      * PostOrder  : List(A, C, E, D, B, H, I, G, F)
      * LevelOrder : List(F, B, G, A, D, I, C, E, H)
+     * size       : 9
+     * hight      : 4
+     * leafCount  : 4
+     * last       : H
+     * maxRight   : H
+     * maxLeft    : A
+     * [success] Total time: 2 s, completed 2015/04/07 17:14:47
      }}} */
 }
 
