@@ -38,6 +38,7 @@ class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
     }
     def hight    : Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).max + 1)
     def leafCount: Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).sum)
+    def last     : A   = traversePreOrder.last
 
 }   // }}}
 
@@ -115,6 +116,8 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
         }
         traverseHight(root)
     }
+
+    def last: A = toListPreOrder.last
 }
 
 /*
@@ -144,6 +147,7 @@ object BinaryTree2 extends App {
         println("size      : " + btree.size)
         println("hight     : " + btree.hight)
         println("leafCount : " + btree.leafCount)
+        println("last      : " + btree.last)
 
         println()
 
@@ -156,6 +160,7 @@ object BinaryTree2 extends App {
         println("size       : " + btree2.size)
         println("hight      : " + btree2.hight)
         println("leafCount  : " + btree2.leafCount)
+        println("last       : " + btree2.last)
     }
 
     println("[root1]")
