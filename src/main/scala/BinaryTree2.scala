@@ -85,7 +85,7 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
     def traverseInOrder  [B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => lv :: dv :: rv :: vs)
     def traversePostOrder[B](z: B)(opz: (A,B) => B): B = traverseTree(z)(opz)(List(root))((dv,lv,rv,vs) => lv :: rv :: dv :: vs)
 
-    /* {{{
+    /* Breadth-order traversal (also called a Level-order traversal) {{{
      * F :: Nil :: (B-(A,(D-(C,E)))) :: (G-(_,(I-(H,_)))) :: Nil
      * B :: (G-(_,(I-(H,_)))) :: A :: (D,(C,E)) :: Nil
      * G :: A :: (D-(C,E) :: (_,(I-(H,_))) :: Nil
@@ -141,6 +141,14 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
  *    / \   / \
  *   A   C E   G
  *
+ *          H
+ *        /   \
+ *      D        K
+ *     / \      / \
+ *   B    F    J    L 
+ *  /\   /\   /\
+ * A  C E  G I  _
+ *
  *        F
  *      /   \
  *    B       G
@@ -189,52 +197,78 @@ object BinaryTree2 extends App {
     val root2 = Node("F", Node("B", Leaf("A"), Node("D", Leaf("C"), Leaf("E"))), Node("G", Sentinel, Node("I", Leaf("H"), Sentinel)))
     traverseBinaryTree(root2)
 
+    println()
+
+    println("[root3]")
+    val root3 = Node("H", Node("D", Node("B", Leaf("A"), Leaf("C")), Node("F", Leaf("E"), Leaf("G"))), Node("K", Node("J", Leaf("I"), Sentinel), Leaf("L")))
+    traverseBinaryTree(root3)
+
     /* {{{
-     * [info] Running BinaryTree2
-     * [root1]
-     * -- CompleteBinaryTree --
-     * PreOrder  : List(D, B, A, C, F, E, G)
-     * InOrder   : List(A, B, C, D, E, F, G)
-     * PostOrder : List(A, C, B, E, G, F, D)
-     * size      : 7
-     * hight     : 3
-     * leafCount : 4
-     * maxRight  : G
-     * maxLeft   : A
-     * 
-     * -- CompleteBinaryTree2 --
-     * PreOrder   : List(D, B, A, C, F, E, G)
-     * InOrder    : List(A, B, C, D, E, F, G)
-     * PostOrder  : List(A, C, B, E, G, F, D)
-     * LevelOrder : List(D, B, F, A, C, E, G)
-     * size       : 7
-     * hight      : 3
-     * leafCount  : 4
-     * maxRight   : G
-     * maxLeft    : A
-     * 
-     * [root2]
-     * -- CompleteBinaryTree --
-     * PreOrder  : List(F, B, A, D, C, E, G, I, H)
-     * InOrder   : List(A, B, C, D, E, F, G, H, I)
-     * PostOrder : List(A, C, E, D, B, H, I, G, F)
-     * size      : 9
-     * hight     : 4
-     * leafCount : 4
-     * maxRight  : H
-     * maxLeft   : A
-     * 
-     * -- CompleteBinaryTree2 --
-     * PreOrder   : List(F, B, A, D, C, E, G, I, H)
-     * InOrder    : List(A, B, C, D, E, F, G, H, I)
-     * PostOrder  : List(A, C, E, D, B, H, I, G, F)
-     * LevelOrder : List(F, B, G, A, D, I, C, E, H)
-     * size       : 9
-     * hight      : 4
-     * leafCount  : 4
-     * maxRight   : H
-     * maxLeft    : A
-     * [success] Total time: 2 s, completed 2015/04/07 17:14:47
+     *[root1]
+     *-- CompleteBinaryTree --
+     *PreOrder  : List(D, B, A, C, F, E, G)
+     *InOrder   : List(A, B, C, D, E, F, G)
+     *PostOrder : List(A, C, B, E, G, F, D)
+     *size      : 7
+     *hight     : 3
+     *leafCount : 4
+     *maxRight  : G
+     *maxLeft   : A
+     *
+     *-- CompleteBinaryTree2 --
+     *PreOrder   : List(D, B, A, C, F, E, G)
+     *InOrder    : List(A, B, C, D, E, F, G)
+     *PostOrder  : List(A, C, B, E, G, F, D)
+     *LevelOrder : List(D, B, F, A, C, E, G)
+     *size       : 7
+     *hight      : 3
+     *leafCount  : 4
+     *maxRight   : G
+     *maxLeft    : A
+     *
+     *[root2]
+     *-- CompleteBinaryTree --
+     *PreOrder  : List(F, B, A, D, C, E, G, I, H)
+     *InOrder   : List(A, B, C, D, E, F, G, H, I)
+     *PostOrder : List(A, C, E, D, B, H, I, G, F)
+     *size      : 9
+     *hight     : 4
+     *leafCount : 4
+     *maxRight  : H
+     *maxLeft   : A
+     *
+     *-- CompleteBinaryTree2 --
+     *PreOrder   : List(F, B, A, D, C, E, G, I, H)
+     *InOrder    : List(A, B, C, D, E, F, G, H, I)
+     *PostOrder  : List(A, C, E, D, B, H, I, G, F)
+     *LevelOrder : List(F, B, G, A, D, I, C, E, H)
+     *size       : 9
+     *hight      : 4
+     *leafCount  : 4
+     *maxRight   : H
+     *maxLeft    : A
+     *
+     *[root3]
+     *-- CompleteBinaryTree --
+     *PreOrder  : List(H, D, B, A, C, F, E, G, K, J, I, L)
+     *InOrder   : List(A, B, C, D, E, F, G, H, I, J, K, L)
+     *PostOrder : List(A, C, B, E, G, F, D, I, J, L, K, H)
+     *size      : 12
+     *hight     : 4
+     *leafCount : 6
+     *maxRight  : L
+     *maxLeft   : A
+     *
+     *-- CompleteBinaryTree2 --
+     *PreOrder   : List(H, D, B, A, C, F, E, G, K, J, I, L)
+     *InOrder    : List(A, B, C, D, E, F, G, H, I, J, K, L)
+     *PostOrder  : List(A, C, B, E, G, F, D, I, J, L, K, H)
+     *LevelOrder : List(H, D, K, B, F, J, L, A, C, E, G, I)
+     *size       : 12
+     *hight      : 4
+     *leafCount  : 6
+     *maxRight   : L
+     *maxLeft    : A
      }}} */
 }
 
