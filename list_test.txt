@@ -1,0 +1,35 @@
+val list1 = (1 to 15).toList.reverse
+//val list1 = (1 to 7).toList.reverse
+
+val nextLeafNum = Map(8->4, 4->2, 2->1)
+
+val debug = false
+def log(msg: => String) = if(debug) println(msg)
+
+def func[A](n: Int, l1: List[A], l2: List[_]): Tuple2[A,_] = {
+    log("Åö-----")
+    log(s"Åö n = $n")
+    log(s"Åö l1 = $l1")
+    log(s"Åö l2 = $l2")
+    if(n == 1) {
+        (l1.head, l2.head)
+    } else {
+/*
+        val lz = (((l: List[A]) => l.take(n).reverse) andThen
+                  ((l: List[A]) => if(l2.isEmpty) l else l.zip(l2)) andThen
+                  ((l: List[_]) => l.grouped(2).map(xs => (xs(0),xs(1))).toList))(l1)
+*/
+        val lx = l1.take(n).reverse
+        log(s"Åö lx = $lx")
+        val ly = if(l2.isEmpty) lx else lx.zip(l2)
+        log(s"Åö ly = $ly")
+        val lz = ly.grouped(2).map(xs => (xs(0),xs(1))).toList
+        log(s"Åö lz = $lz")
+        log(s"Åö lz.size = ${lz.size}")
+        func(nextLeafNum(n), l1.drop(n), lz)
+    }
+}
+
+func(8, list1, Nil)
+
+/* vim: set ft=scala foldmethod=marker: */
