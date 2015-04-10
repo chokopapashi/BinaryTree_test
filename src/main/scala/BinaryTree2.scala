@@ -1,5 +1,6 @@
 
 import scala.reflect.runtime.{universe => ru}
+import scala.math.pow
 
 abstract class Vertex[+A](implicit tA: ru.TypeTag[A])  {
     val data: A
@@ -115,24 +116,55 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
             case Leaf(_)       => 1
             case _             => 0
         }
-        traverseHight(root)
+        traverseHight(root) - 1
     }
 
     def maxRight: A = toListPreOrder.last
     def maxLeft : A = toListPostOrder.head
     def last    : A = toListLevelOrder.last
 
-/*
-    def add(d: A): CompleteBinaryTree2[A] = {
-         def traverseAdd(v: VA): Int = v match {
-            case Node(_, l, r) => List(traverseHight(l), traverseHight(r)).max + 1
-            case Leaf(_)       => new CompleteBinaryTree(Leaf(d))
-            case Sentinel      => new CompleteBinaryTree(Leaf(d))
-            case _             => 0
+    def calcMaxNumOfVertex(h: Int) = (pow(2, (h + 1)) - 1).toInt
+    def calcMaxNumOfLeaf(h: Int) = (calcMaxNumOfVertex(h) + 1) / 2
+
+    def maxNumOfVertex = calcMaxNumOfVertex(hight)
+    def maxNumOfLeaf = calcMaxNumOfLeaf(hight)
+
+    /*
+     * ("H",(("D",(("B",("A","C")),("F",("E","G")))),("K",(("J",("I",Sentinel)),("L",(Sentinel,Sentinel))))))
+     */
+//    def add(d: A): CompleteBinaryTree2[A] =
+    def add(d: A): Unit =
+    {
+        var bovs: List[VA] = {
+            val lx = traverseVertexLevelOrder(List.empty[VA])((d,_,z) => VertexData(d) :: z)
+            if(lx.size < maxNumOfVertex) 
+                List.fill(maxNumOfVertex - lx.size)(Sentinel) ::: lx
+            else
+                lx
         }
-        traverseAdd(root)
+
+        def createTupledTree(h: Int, l1: List[VA], l2: List[_]): Tuple2[_,_] = {
+            val n = calcMaxNumOfLeaf(h)
+            if(h == 0) 
+                (l1.head, l2.head)
+            else {
+                val lx = l1.take(n).reverse
+                val ly = if(l2.isEmpty) lx else lx.zip(l2)
+                val lz = ly.grouped(2).map(xs => (xs(0),xs(1))).toList
+                createTupledTree(h - 1, l1.drop(n), lz)
+            }
+        }
+        val tupledTree = createTupledTree(hight, bovs, Nil)
+
+        def createTree(tt: Tuple2[VA,_]): VA = tt match {
+            case (VertexData(dv), (VertexData(dl),  VertexData(dr))) => Node(dv, Leaf(dl), Leaf(dr))
+            case (VertexData(dv), (VertexData(dl),  Sentinel))       => Node(dv, Leaf(dl), Sentinel)
+            case (VertexData(dv), (Sentinel, Sentinel))              => Leaf(dv)
+            case (VertexData(dv), (l,r))                             => Node(dv, createTree(l), createTree(r))
+            case _ => throw new IllegalStateException("invalid Tupled Tree")
+        }
+        val tree = createTree(tupledTree)
     }
-*/
 }
 
 /*
@@ -205,6 +237,8 @@ object BinaryTree2 extends App {
     println("[root3]")
     val root3 = Node("H", Node("D", Node("B", Leaf("A"), Leaf("C")), Node("F", Leaf("E"), Leaf("G"))), Node("K", Node("J", Leaf("I"), Sentinel), Leaf("L")))
     traverseBinaryTree(root3)
+
+    println(new CompleteBinaryTree2(root3).add("a"))
 
     /* {{{
      *[root1]
