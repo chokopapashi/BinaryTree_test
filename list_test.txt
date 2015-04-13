@@ -6,22 +6,86 @@ val nextLeafNum = Map(8->4, 4->2, 2->1)
 val debug = false
 def log(msg: => String) = if(debug) println(msg)
 
-def func[A](n: Int, l1: List[A], l2: List[_]): Tuple2[A,_] = {
+// {{{
+//def func[A](n: Int, l1: List[A], l2: List[_]): Tuple2[A,_] = {
+//    log("Åö-----")
+//    log(s"Åö n = $n")
+//    log(s"Åö l1 = $l1")
+//    log(s"Åö l2 = $l2")
+//    if(n == 1) {
+//        (l1.head, l2.head)
+//    } else {
+///*
+//        val lz = (((l: List[A]) => l.take(n).reverse) andThen
+//                  ((l: List[A]) => if(l2.isEmpty) l else l.zip(l2)) andThen
+//                  ((l: List[_]) => l.grouped(2).map(xs => (xs(0),xs(1))).toList))(l1)
+//*/
+//        val lx = l1.take(n).reverse
+//        log(s"Åö lx = $lx")
+//        val ly = if(l2.isEmpty) lx else lx.zip(l2)
+//        log(s"Åö ly = $ly")
+//        val lz = ly.grouped(2).map(xs => (xs(0),xs(1))).toList
+//        log(s"Åö lz = $lz")
+//        log(s"Åö lz.size = ${lz.size}")
+//        func(nextLeafNum(n), l1.drop(n), lz)
+//    }
+//}
+// }}}
+// {{{
+//def func[A](n: Int, l1: List[A], l2: List[A]): List[A] = {
+//    log("Åö-----")
+//    log(s"Åö n = $n")
+//    log(s"Åö l1 = $l1")
+//    log(s"Åö l2 = $l2")
+//    if(n == 1) {
+//        l1 ::: l2
+//    } else {
+//        val lx: List[A] = l1.take(n).reverse
+//        log(s"Åö lx = $lx")
+//        val ly: List[A] = if(l2.isEmpty) lx else lx.zip(l2.grouped(l2.size/n).toList).map(t => t._1 :: t._2).flatten
+//        log(s"Åö ly = $ly")
+//        log(s"Åö ly.size = ${ly.size}")
+//        func(nextLeafNum(n), l1.drop(n), ly)
+//    }
+//}
+// }}}
+
+abstract class Vertex[+A] {
+    val data: A
+}
+
+case class Leaf[A](data: A) extends Vertex[A]
+case class Node[A](data: A, left: Vertex[A], right: Vertex[A]) extends Vertex[A]
+object Sentinel extends Vertex[Nothing] {
+    lazy val data = throw new IllegalStateException()
+    override def toString = s"Sentinel[Nothing]"
+}
+case class VertexData[A](data: A) extends Vertex[A]
+case class VertexWrap[A](data: A, vertex: Vertex[A]) extends Vertex[A]
+
+val list1 = ((1 to 12).toList.map(VertexData(_)) ::: List.fill(3)(Sentinel)).reverse
+
+def func[A](n: Int, l1: List[Vertex[A]], l2: List[Tuple2[Vertex[A],Vertex[A]]]): Vertex[A] = {
     log("Åö-----")
     log(s"Åö n = $n")
     log(s"Åö l1 = $l1")
     log(s"Åö l2 = $l2")
-    if(n == 1) {
-        (l1.head, l2.head)
+    if(n == 1) l2 match {
+        case Nil => Leaf(l1.head.data)
+        case (l, r) :: Nil  => Node(l1.head.data, l, r)
+        case _ => throw new IllegalStateException()
     } else {
-/*
-        val lz = (((l: List[A]) => l.take(n).reverse) andThen
-                  ((l: List[A]) => if(l2.isEmpty) l else l.zip(l2)) andThen
-                  ((l: List[_]) => l.grouped(2).map(xs => (xs(0),xs(1))).toList))(l1)
-*/
-        val lx = l1.take(n).reverse
+        val lx: List[Vertex[A]] = l1.take(n).reverse
         log(s"Åö lx = $lx")
-        val ly = if(l2.isEmpty) lx else lx.zip(l2)
+        val ly: List[Vertex[A]] =
+            if(l2.isEmpty) lx.map { 
+                case Sentinel      => Sentinel
+                case VertexData(d) => Leaf(d)
+            } else lx.zip(l2).map {
+                case (VertexData(dv), (Sentinel, Sentinel))                 => Leaf(dv)
+                case (VertexData(dv), (l: Vertex[A], Sentinel))         => Node(dv, l, Sentinel)
+                case (VertexData(dv), (l: Vertex[A], r: Vertex[A])) => Node(dv, l, r)
+            }
         log(s"Åö ly = $ly")
         val lz = ly.grouped(2).map(xs => (xs(0),xs(1))).toList
         log(s"Åö lz = $lz")
