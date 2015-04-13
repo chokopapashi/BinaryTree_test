@@ -16,7 +16,27 @@ object Sentinel extends Vertex[Nothing] {
 case class VertexData[A](data: A)(implicit tA: ru.TypeTag[A]) extends Vertex[A]
 case class VertexWrap[A](data: A, vertex: Vertex[A])(implicit tA: ru.TypeTag[A]) extends Vertex[A]
 
-class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
+trait BinaryTree[A] {
+    def toListPreOrder   : List[A]
+    def toListInOrder    : List[A]
+    def toListPostOrder  : List[A]
+    def toListLevelOrder : List[A]
+
+    def size : Int
+    def hight: Int
+    def leafCount: Int
+    def maxRight: A
+    def maxLeft : A
+    def last    : A
+
+    def calcMaxNumOfVertex(h: Int) = (pow(2, (h + 1)) - 1).toInt
+    def calcMaxNumOfLeaf(h: Int) = (calcMaxNumOfVertex(h) + 1) / 2
+
+    def maxNumOfVertex = calcMaxNumOfVertex(hight)
+    def maxNumOfLeaf = calcMaxNumOfLeaf(hight)
+}
+
+class CompleteBinaryTree1[A](root: Vertex[A]) extends BinaryTree[A] { //{{{
 
     type VA = Vertex[A]
     type LA = List[A]
@@ -30,21 +50,27 @@ class CompleteBinaryTree[A](root: Vertex[A]) { //{{{
     def traversePreOrder  = traverse(root)((d,lt,rt) => List(d) ::: lt ::: rt ::: Nil)
     def traverseInOrder   = traverse(root)((d,lt,rt) => lt ::: List(d) ::: rt ::: Nil)
     def traversePostOrder = traverse(root)((d,lt,rt) => lt ::: rt ::: List(d) ::: Nil)
-    def size = traverseInOrder.size
 
+    def toListPreOrder   = traversePreOrder
+    def toListInOrder    = traverseInOrder
+    def toListPostOrder  = traversePostOrder 
+    def toListLevelOrder = Nil  /* Not implemented */
+
+    def size = traverseInOrder.size
     def traverse2[B](v: VA)(d1: B)(d2: B)(op: (B,B) => B): B = v match {
         case Node(_, l, r) => op(traverse2(l)(d1)(d2)(op), traverse2(r)(d1)(d2)(op))
         case Leaf(_)       => d1
         case _             => d2 
     }
-    def hight    : Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).max + 1)
+    def hight    : Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).max + 1) - 1
     def leafCount: Int = traverse2(root)(1)(0)((lret,rret) => List(lret,rret).sum)
     def maxRight : A   = traversePreOrder.last
     def maxLeft  : A   = traversePostOrder.head
+    def last     : A   = root.data /* Not implemented */
 
 }   // }}}
 
-class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
+class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) extends BinaryTree[A] {
 
     type VA  = Vertex[A]
     type LVA = List[VA]
@@ -123,47 +149,74 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
     def maxLeft : A = toListPostOrder.head
     def last    : A = toListLevelOrder.last
 
-    def calcMaxNumOfVertex(h: Int) = (pow(2, (h + 1)) - 1).toInt
-    def calcMaxNumOfLeaf(h: Int) = (calcMaxNumOfVertex(h) + 1) / 2
-
-    def maxNumOfVertex = calcMaxNumOfVertex(hight)
-    def maxNumOfLeaf = calcMaxNumOfLeaf(hight)
-
     /*
-     * ("H",(("D",(("B",("A","C")),("F",("E","G")))),("K",(("J",("I",Sentinel)),("L",(Sentinel,Sentinel))))))
+     * List(H, D, B, A, C, F, E, G, K, J, I, Sentinel, L, Sentinel, Sentinel)
      */
-//    def add(d: A): CompleteBinaryTree2[A] =
-    def add(d: A): Unit =
+    def add1(nd: A): CompleteBinaryTree2[A] =
     {
-        var bovs: List[VA] = {
-            val lx = traverseVertexLevelOrder(List.empty[VA])((d,_,z) => VertexData(d) :: z)
-            if(lx.size < maxNumOfVertex) 
-                List.fill(maxNumOfVertex - lx.size)(Sentinel) ::: lx
-            else
-                lx
-        }
+        val bovs = traverseVertexLevelOrder(List.empty[VA])((d,_,z) => VertexData(d) :: z)
+        val newHight = if((bovs.size+1) <= maxNumOfVertex)
+                           hight
+                       else
+                           hight + 1
+        val nbovs: List[VA] = List.fill(calcMaxNumOfVertex(newHight)-(bovs.size+1))(Sentinel) ::: (VertexData(nd) :: bovs)
 
-        def createTupledTree(h: Int, l1: List[VA], l2: List[_]): Tuple2[_,_] = {
+        def createTreeList(h: Int, l1: List[VA], l2: List[VA]): List[VA] = {
             val n = calcMaxNumOfLeaf(h)
             if(h == 0) 
-                (l1.head, l2.head)
+                l1 ::: l2
             else {
                 val lx = l1.take(n).reverse
-                val ly = if(l2.isEmpty) lx else lx.zip(l2)
-                val lz = ly.grouped(2).map(xs => (xs(0),xs(1))).toList
-                createTupledTree(h - 1, l1.drop(n), lz)
+                val ly = if(l2.isEmpty) lx else lx.zip(l2.grouped(l2.size/n).toList).map(t => t._1 :: t._2).flatten
+                createTreeList(h - 1, l1.drop(n), ly)
             }
         }
-        val tupledTree = createTupledTree(hight, bovs, Nil)
+        val treeList = createTreeList(newHight, nbovs, Nil)
 
-        def createTree(tt: Tuple2[VA,_]): VA = tt match {
-            case (VertexData(dv), (VertexData(dl),  VertexData(dr))) => Node(dv, Leaf(dl), Leaf(dr))
-            case (VertexData(dv), (VertexData(dl),  Sentinel))       => Node(dv, Leaf(dl), Sentinel)
-            case (VertexData(dv), (Sentinel, Sentinel))              => Leaf(dv)
-            case (VertexData(dv), (l,r))                             => Node(dv, createTree(l), createTree(r))
-            case _ => throw new IllegalStateException("invalid Tupled Tree")
+        def createTree(tl: List[VA]): VA = tl match {
+            case VertexData(dv) :: Sentinel :: Sentinel :: Nil             => Leaf(dv)
+            case VertexData(dv) :: VertexData(dl) :: Sentinel :: Nil       => Node(dv, Leaf(dl), Sentinel)
+            case VertexData(dv) :: VertexData(dl) :: VertexData(dr) :: Nil => Node(dv, Leaf(dl), Leaf(dr))
+            case VertexData(dv) :: tlt                                     => Node(dv, createTree(tlt.take(tlt.size/2)), createTree(tlt.drop(tlt.size/2)))
+            case _ => throw new IllegalStateException("invalid Tree List")
         }
-        val tree = createTree(tupledTree)
+        val tree = createTree(treeList)
+        new CompleteBinaryTree2(tree)
+    }
+
+    def add2(nd: A): CompleteBinaryTree2[A] =
+    {
+        val bovs = traverseVertexLevelOrder(List.empty[VA])((d,_,z) => VertexData(d) :: z)
+        val newHight = if((bovs.size+1) <= maxNumOfVertex)
+                           hight
+                       else
+                           hight + 1
+        val nbovs: List[VA] = List.fill(calcMaxNumOfVertex(newHight)-(bovs.size+1))(Sentinel) ::: (VertexData(nd) :: bovs)
+
+        def createTree(h: Int, l1: List[VA], l2: List[Tuple2[VA,VA]]): VA = {
+            val n = calcMaxNumOfLeaf(h)
+            val lx = l1.take(n).reverse
+            if(h == 0) l2 match {
+                case Nil => Leaf(l1.head.data)
+                case (l, r) :: Nil => Node(l1.head.data, l, r)
+                case _ => throw new IllegalStateException("invalid new Breadth-order Tree List")
+            } else {
+                val lx = l1.take(n).reverse
+                val ly =
+                    if(l2.isEmpty) lx.map { 
+                        case Sentinel      => Sentinel
+                        case VertexData(d) => Leaf(d)
+                    } else lx.zip(l2).map {
+                        case (VertexData(dv), (Sentinel, Sentinel))         => Leaf(dv)
+                        case (VertexData(dv), (l: Vertex[A], Sentinel))     => Node(dv, l, Sentinel)
+                        case (VertexData(dv), (l: Vertex[A], r: Vertex[A])) => Node(dv, l, r)
+                    }
+                val lz = ly.grouped(2).map(l => (l(0),l(1))).toList
+                createTree(h - 1, l1.drop(n), lz)
+            }
+        }
+        val tree = createTree(newHight, nbovs, Nil)
+        new CompleteBinaryTree2(tree)
     }
 }
 
@@ -193,52 +246,84 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
  */
 object BinaryTree2 extends App {
 
-    def traverseBinaryTree[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
-
-//        val btree = new CompleteBinaryTree(root) /* {{{ */
-//        println("-- CompleteBinaryTree --")
-//        println("PreOrder  : " + btree.traversePreOrder)
-//        println("InOrder   : " + btree.traverseInOrder)
-//        println("PostOrder : " + btree.traversePostOrder)
-//        println("size      : " + btree.size)
-//        println("hight     : " + btree.hight)
-//        println("leafCount : " + btree.leafCount)
-//        println("maxRight  : " + btree.maxRight)
-//        println("maxLeft   : " + btree.maxLeft)
-//
-//        println() /* }}} */
-
-        val btree2 = new CompleteBinaryTree2(root)
-        println("-- CompleteBinaryTree2 --")
-        println("PreOrder   : " + btree2.toListPreOrder)
-        println("InOrder    : " + btree2.toListInOrder)
-        println("PostOrder  : " + btree2.toListPostOrder)
-        println("LevelOrder : " + btree2.toListLevelOrder)
-        println("size       : " + btree2.size)
-        println("hight      : " + btree2.hight)
-        println("leafCount  : " + btree2.leafCount)
-        println("maxRight   : " + btree2.maxRight)
-        println("maxLeft    : " + btree2.maxLeft)
-        println("last       : " + btree2.last)
+    def inspectTreeConcrete[A](btree: BinaryTree[A])(implicit tA: ru.TypeTag[A]) {
+        println(s"-- ${btree.getClass.getName} --")
+        println("PreOrder   : " + btree.toListPreOrder)
+        println("InOrder    : " + btree.toListInOrder)
+        println("PostOrder  : " + btree.toListPostOrder)
+        println("LevelOrder : " + btree.toListLevelOrder)
+        println("size       : " + btree.size)
+        println("hight      : " + btree.hight)
+        println("leafCount  : " + btree.leafCount)
+        println("maxRight   : " + btree.maxRight)
+        println("maxLeft    : " + btree.maxLeft)
+        println("last       : " + btree.last)
+        println("maxNumOfVertex : " + btree.maxNumOfVertex)
+        println("maxNumOfLeaf   : " + btree.maxNumOfLeaf)
+        println("")
     }
 
-    println("[root1]")
+    def inspectTree[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) {
+        inspectTreeConcrete(new CompleteBinaryTree1(root))
+        inspectTreeConcrete(new CompleteBinaryTree2(root))
+    }
+   
     val root1 = Node("D", Node("B", Leaf("A"), Leaf("C")), Node("F", Leaf("E"), Leaf("G")))
-    traverseBinaryTree(root1)
-
-    println()
-
-    println("[root2]")
     val root2 = Node("F", Node("B", Leaf("A"), Node("D", Leaf("C"), Leaf("E"))), Node("G", Sentinel, Node("I", Leaf("H"), Sentinel)))
-    traverseBinaryTree(root2)
-
-    println()
-
-    println("[root3]")
     val root3 = Node("H", Node("D", Node("B", Leaf("A"), Leaf("C")), Node("F", Leaf("E"), Leaf("G"))), Node("K", Node("J", Leaf("I"), Sentinel), Leaf("L")))
-    traverseBinaryTree(root3)
 
-    println(new CompleteBinaryTree2(root3).add("a"))
+    println(f"[test1 : root1]")
+    inspectTree(root1)
+
+    println(f"[test2 : root2]")
+    inspectTree(root2)
+
+    println(f"[test3 : root3]")
+    inspectTree(root3)
+
+    println(f"[test4 : add Vertex to root3]")
+    inspectTreeConcrete(new CompleteBinaryTree2(root3).add1("a"))
+    println(f"[test5 : create tree]")
+    inspectTreeConcrete(new CompleteBinaryTree2(Leaf("H")).add1("D").add1("K").add1("B").add1("F").add1("J").add1("L")
+                                                          .add1("A").add1("C").add1("E").add1("G").add1("I"))
+    println(f"[test6 : add repeatedly]")
+
+    {
+        var tree =  new CompleteBinaryTree2(Leaf("H")) ; inspectTreeConcrete(tree)
+        tree = tree.add1("D") ; inspectTreeConcrete(tree)
+        tree = tree.add1("K") ; inspectTreeConcrete(tree)
+        tree = tree.add1("B") ; inspectTreeConcrete(tree)
+        tree = tree.add1("F") ; inspectTreeConcrete(tree)
+        tree = tree.add1("J") ; inspectTreeConcrete(tree)
+        tree = tree.add1("L") ; inspectTreeConcrete(tree)
+        tree = tree.add1("A") ; inspectTreeConcrete(tree)
+        tree = tree.add1("C") ; inspectTreeConcrete(tree)
+        tree = tree.add1("E") ; inspectTreeConcrete(tree)
+        tree = tree.add1("G") ; inspectTreeConcrete(tree)
+        tree = tree.add1("I") ; inspectTreeConcrete(tree)
+    }
+
+    println(f"[test7 : add Vertex to root3]")
+    inspectTreeConcrete(new CompleteBinaryTree2(root3).add2("a"))
+    println(f"[test8 : create tree]")
+    inspectTreeConcrete(new CompleteBinaryTree2(Leaf("H")).add2("D").add2("K").add2("B").add2("F").add2("J").add2("L")
+                                                          .add2("A").add2("C").add2("E").add2("G").add2("I"))
+    println(f"[test9 : add repeatedly]")
+
+    {
+        var tree =  new CompleteBinaryTree2(Leaf("H")) ; inspectTreeConcrete(tree)
+        tree = tree.add2("D") ; inspectTreeConcrete(tree)
+        tree = tree.add2("K") ; inspectTreeConcrete(tree)
+        tree = tree.add2("B") ; inspectTreeConcrete(tree)
+        tree = tree.add2("F") ; inspectTreeConcrete(tree)
+        tree = tree.add2("J") ; inspectTreeConcrete(tree)
+        tree = tree.add2("L") ; inspectTreeConcrete(tree)
+        tree = tree.add2("A") ; inspectTreeConcrete(tree)
+        tree = tree.add2("C") ; inspectTreeConcrete(tree)
+        tree = tree.add2("E") ; inspectTreeConcrete(tree)
+        tree = tree.add2("G") ; inspectTreeConcrete(tree)
+        tree = tree.add2("I") ; inspectTreeConcrete(tree)
+    }
 
     /* {{{
      *[root1]
