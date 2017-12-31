@@ -3,7 +3,7 @@
 lazy val commonSettings = Seq(
     organization := "org.hirosezouen",
     version      := "1.0.0",
-    scalaVersion := "2.11.6"
+    scalaVersion := "2.12.4"
 )
 
 lazy val root = (project in file(".")).
@@ -23,12 +23,12 @@ lazy val root = (project in file(".")).
         //libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.4" % "compile,test",
 
         // add Logback, SLF4j dependencies
-        libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2",
-        libraryDependencies += "ch.qos.logback" % "logback-core" % "1.1.2",
-        libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.12",
+        libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
+        libraryDependencies += "ch.qos.logback" % "logback-core" % "1.2.3",
+        libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.25",
 
         // add HZUtil dependency
-        libraryDependencies += "org.hirosezouen" %% "hzutil" % "2.0.0",
+        libraryDependencies += "org.hirosezouen" %% "hzutil" % "2.2.0",
 
         // add compile exclude files
         excludeFilter := HiddenFileFilter || "BinaryTree.scala" || "ArrayHeap.scala",
@@ -41,6 +41,10 @@ lazy val root = (project in file(".")).
         parallelExecution in Test := false,
 //        logLevel := Level.Debug,
         scalacOptions += "-deprecation",
-        scalacOptions += "-feature"
+        scalacOptions += "-feature",
+        scalacOptions += "-unchecked",
+        scalacOptions += "-Xlint:_,-unused",
+        scalacOptions += "-Ywarn-unused-import",
+        scalacOptions += "-Xfatal-warnings"
     )
 
