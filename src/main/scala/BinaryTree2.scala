@@ -210,6 +210,7 @@ class CompleteBinaryTree2[A](root: Vertex[A])(implicit tA: ru.TypeTag[A]) extend
                         case (VertexData(dv), (Sentinel, Sentinel))         => Leaf(dv)
                         case (VertexData(dv), (l: Vertex[A], Sentinel))     => Node(dv, l, Sentinel)
                         case (VertexData(dv), (l: Vertex[A], r: Vertex[A])) => Node(dv, l, r)
+                        case _ => throw new IllegalStateException("createTree:lx.zip(l2).map")
                     }
                 val lz = ly.grouped(2).map(l => (l(0),l(1))).toList
                 createTree(h - 1, l1.drop(n), lz)
